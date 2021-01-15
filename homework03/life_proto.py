@@ -129,7 +129,7 @@ class GameOfLife:
         out : Cells
             Список соседних клеток.
         """
-        list_of_neighbors = []
+        list_all_neighbors = []
         for i in range(cell[0]-1, cell[0]+2):
             if i >= self.cell_height or i < 0:
                 continue
@@ -138,8 +138,8 @@ class GameOfLife:
                     continue
                 if i == cell[0] and j == cell[1]:
                     continue
-                list_of_neighbors.append(self.grid[i][j])
-        return list_of_neighbors
+                list_all_neighbors.append(self.grid[i][j])
+        return list_all_neighbors
 
 
     def get_next_generation(self) -> Grid:
