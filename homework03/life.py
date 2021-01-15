@@ -1,10 +1,10 @@
-import copy
 import pathlib
 import random
-import typing import List, Optional, Tuple
+# import pygame
+import json
 
-import pygame
-from pygame.locals import *
+from typing import List, Optional, Tuple
+
 
 Cell = Tuple[int, int]
 Cells = List[int]
