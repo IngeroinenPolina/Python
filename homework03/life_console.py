@@ -1,8 +1,8 @@
 import curses
 import curses.textpad
+import sys
 from life import GameOfLife
 from ui import UI
-from time import sleep
 
 class Console(UI):
     def __init__(self, life: GameOfLife) -> None:
@@ -17,9 +17,9 @@ class Console(UI):
         for i in range(self.life.rows):
             for j in range(self.life.cols):
                 if self.life.curr_generation[i][j] == 1:
-                    self.screen.addch(i + 1, j + 1, 'O')
+                    self.screen.addch(i + 1, j + 1, '*')
                 else:
-                    self.screen.addch(i + 1, j + 1, '.')
+                    self.screen.addch(i + 1, j + 1, ' ')
 
     def run(self) -> None:
         self.screen = curses.initscr()

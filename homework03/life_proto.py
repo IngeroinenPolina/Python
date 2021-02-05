@@ -166,6 +166,6 @@ class GameOfLife:
                         next_grid[i][j] = 0
         return next_grid
 
-
-# game = GameOfLife(300, 300, 10, 10)
-# game.run()
+if __name__ == "__main__":
+    game = GameOfLife(300,300,10,10)
+    game.run()
