@@ -1,6 +1,7 @@
 import curses
 from life import GameOfLife
 from ui import UI
+import time
 from time import sleep
 
 
@@ -30,8 +31,8 @@ class Console(UI):
             self.draw_borders()
             self.draw_grid()
             self.screen.refresh()
-            
-            sleep(0.5)
+
+            time.sleep(0.5)
 
             self.life.step()
 
