@@ -8,10 +8,10 @@ def repo_find(workdir: tp.Union[str, pathlib.Path] = ".") -> pathlib.Path:
     gitdir_name = os.getenv("GIT_DIR", ".pyvcs")
     workdir = pathlib.Path(workdir)
     while pathlib.Path(workdir.absolute().root) != workdir.absolute():
-        if (workdir / gitdir_name).is_dir():
+        if os.path.isdir((workdir / gitdir_name)):
             return workdir / gitdir_name
         workdir = workdir.parent
-    if (workdir / gitdir_name).is_dir():
+    if os.path.isdir((workdir / gitdir_name):
         return workdir / gitdir_name
     raise Exception("Not a git repository")
 

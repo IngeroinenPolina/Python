@@ -21,18 +21,19 @@ def symbolic_ref(gitdir: pathlib.Path, name: str, ref: str) -> None:
 def ref_resolve(gitdir: pathlib.Path, refname: str) -> str:
     # PUT YOUR CODE HERE
     if refname == "HEAD":
-        f = open(gitdir / "HEAD", "r")
-        refname = f.read()[5:-1]
-        f.close()
-    f = open(gitdir / refname, "r")
-    data = f.read()
-    f.close()
+        refname = get_ref(gitdir)
+    detached = is_detached(gitdir)
+    if detached:
+        return refname
+    with (gitdir / pathlib.Path(refname)).open("r") as f:
+        data = f.read()
     return data
 
 
 def resolve_head(gitdir: pathlib.Path) -> tp.Optional[str]:
     # PUT YOUR CODE HERE
-    return ref_resolve(gitdir, "HEAD")
+    return ref_resolve(gitdir, "HEAD") if (gitdir / get_ref(gitdir)).exists() \
+        else None
 
 
 def is_detached(gitdir: pathlib.Path) -> bool:
