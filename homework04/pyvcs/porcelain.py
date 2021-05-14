@@ -1,6 +1,7 @@
 import os
 import pathlib
 import typing as tp
+import shutil
 
 from pyvcs.index import read_index, update_index
 from pyvcs.objects import commit_parse, find_object, find_tree_files, read_object
@@ -22,35 +23,25 @@ def commit(gitdir: pathlib.Path, message: str, author: tp.Optional[str] = None) 
 
 def checkout(gitdir: pathlib.Path, obj_name: str) -> None:
     # PUT YOUR CODE HERE
-    for entry in read_index(gitdir):
-        if pathlib.Path(entry.name).exists():
-            os.remove(entry.name)
-    commit_data = commit_parse(read_object(obj_name, gitdir)[1])
-    doing = True
-    while doing:
-        trees: tp.List[tp.Tuple[tp.List[tp.Tuple[int, str, str]], pathlib.Path]] = [
-            (read_tree(read_object(commit_data["tree"], gitdir)[1]), gitdir.parent)
-        ]
-        while trees:
-            tree_content, tree_path = trees.pop()
-            for file_data in tree_content:
-                fmt, data = read_object(file_data[2], gitdir)
-                if fmt != "tree":
-                    if not (tree_path / file_data[1]).exists():
-                        with (tree_path / file_data[1]).open("wb") as file:
-                            file.write(data)
-                            (tree_path / file_data[1]).chmod(int(str(file_data[0]), 8))
-                else:
-                    if not (tree_path / file_data[1]).exists():
-                        (tree_path / file_data[1]).mkdir()
-                    trees.append((read_tree(data), tree_path / file_data[1]))
-        if "parent" in commit_data:
-            commit_data = commit_parse((read_object(commit_data["parent"], gitdir)[1]))
+    update_ref(gitdir, "HEAD", obj_name)
+    index_names = [entry.name for entry in read_index(gitdir)]
+    _, commit_data = read_object(obj_name, gitdir)
+    tree_hash = commit_parse(commit_data)
+    files = find_tree_files(tree_hash, gitdir)
+    to_be_updated = [pathlib.Path(i[1]) for i in files]
+    update_index(gitdir, to_be_updated, write=True)
+    for name in index_names:
+        nodes = name.split("/")
+        if pathlib.Path(nodes[0]).is_dir():
+            shutil.rmtree(nodes[0])
         else:
-            doing = not doing
-    for dir in gitdir.parent.glob("*"):
-        if dir.is_dir() and dir != gitdir:
-            try:
-                os.removedirs(dir)
-            except OSError:
-                continue
+            if pathlib.Path(nodes[0]).exists():
+                os.remove(nodes[0])
+    for sha, name in files:
+        if name.find("/") != -1:
+            prefix, _ = os.path.split(name)
+            if not pathlib.Path(prefix).exists():
+                os.makedirs(prefix)
+        _, content = read_object(sha, gitdir)
+        with open(name, "wb") as file_obj:
+            file_obj.write(content)
