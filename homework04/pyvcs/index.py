@@ -125,6 +125,8 @@ def update_index(gitdir: pathlib.Path, paths: tp.List[pathlib.Path], write: bool
             sha1=bytes.fromhex(hash_object(data, "blob", write=True)),
             flags=len(i.name),
             name=str(i),
-        )
+            )
+        index.append(entry)
     if write:
-        write_index(gitdir, sorted(entries, key=lambda x: x.name))
+        index_s = sorted(index, key=lambda x: x.name)
+        write_index(gitdir, index_s)
