@@ -26,11 +26,11 @@ class GitIndexEntry(tp.NamedTuple):
 
     def pack(self) -> bytes:
         # PUT YOUR CODE HERE
-        values = (
-            self.ctime_s,
-            self.ctime_n,
-            self.mtime_s,
-            self.mtime_n,
+        name = str.encode(self.name)
+        form = f"!10i20sh{len(name) + 3}s"
+        return struct.pack(
+            form,
+            self.ctime_s, self.ctime_n, self.mtime_s, self.mtime_n,
             self.dev,
             self.ino,
             self.mode,
@@ -39,12 +39,8 @@ class GitIndexEntry(tp.NamedTuple):
             self.size,
             self.sha1,
             self.flags,
-            self.name.encode()
+            name
         )
-        name = str(len(self.name.encode())) + "s"
-        nul = "3x"
-        s = struct.pack(f">10i20sh" + name + nul, *values)
-        return s
 
     @staticmethod
     def unpack(data: bytes) -> "GitIndexEntry":
@@ -59,50 +55,48 @@ class GitIndexEntry(tp.NamedTuple):
 
 def read_index(gitdir: pathlib.Path) -> tp.List[GitIndexEntry]:
     # PUT YOUR CODE HERE
-    index = gitdir / "index"
-    if not index.exists():
-        return []
-    with index.open("rb") as file:
-        data = file.read()
-    result = []
-    header = data[:12]
-    main_content = data[12:]
-    main_content_copy = main_content
-    for _ in range(struct.unpack(">I", header[8:])[0]):
-        end_of_entry = len(main_content_copy) - 1
-        for j in range(63, len(main_content_copy), 8):
-            if main_content_copy[j] == 0:
-                end_of_entry = j
-                break
-        result += [GitIndexEntry.unpack(main_content_copy[: end_of_entry + 1])]
-        if len(main_content_copy) > end_of_entry:
-            main_content_copy = main_content_copy[end_of_entry + 1:]
-    return result
+    reading_index, a, b, c = [], 62, 12, 0
+    path = gitdir / 'index'
+    if not path.exists():
+        return reading_index
+    else:
+        with path.open("rb") as f:
+            data = f.read()
+    count = struct.unpack("!i", data[8:12])[0]
+    data = data[12:]
+    for step in range(count):
+        b = data[a:].find(b"\x00\x00\x00")
+
+        indexE = GitIndexEntry
+        unpacked = indexE.unpack(data[c: a + b + 3])
+        reading_index.append(unpacked)
+        a += b + 65;
+        c += b + 65
+    return reading_index
 
 
 def write_index(gitdir: pathlib.Path, entries: tp.List[GitIndexEntry]) -> None:
     # PUT YOUR CODE HERE
-    index_path = gitdir / "index"
-    f = index_path.open(mode="wb")
-    values = (b"DIRC", 2, len(entries))
-    info = struct.pack(">4s2i", *values)
-    to_hash = info
-    f.write(info)
-    for el in entries:
-        f.write(el.pack())
-        to_hash += el.pack()
-    hash = hashlib.sha1(to_hash).hexdigest()
-    f.write(struct.pack(f">{len(bytearray.fromhex(hash))}s", bytearray.fromhex(hash)))
-    f.close()
+    path, data = gitdir / 'index', b"DIRC"
+    data += struct.pack("!2i", 2, len(entries))
+    for i in range(len(entries)):
+        data += entries[i].pack()
+    sha = hashlib.sha1(data).digest()
+    data += sha
+
+    with path.open("wb") as f:
+        f.write(data)
 
 
 def ls_files(gitdir: pathlib.Path, details: bool = False) -> None:
     # PUT YOUR CODE HERE
-    for entry in read_index(gitdir):
+    index = read_index(gitdir)
+    for i in range(len(index)):
+        name, mode, sha = index[i].name, index[i].mode, index[i].sha1.hex()
         if details:
-            print(f"{entry.mode:o} {entry.sha1.hex()} 0\t{entry.name}")
+            print(f"{mode:o} {sha} 0\t{name}")
         else:
-            print(entry.name)
+            print(name)
 
 
 def update_index(gitdir: pathlib.Path, paths: tp.List[pathlib.Path], write: bool = True) -> None:
@@ -112,19 +106,19 @@ def update_index(gitdir: pathlib.Path, paths: tp.List[pathlib.Path], write: bool
         with i.open("rb") as f:
             data = f.read()
         entry = GitIndexEntry(
-            ctime_s=int(os.stat(i).st_ctime),
-            ctime_n=0,
-            mtime_s=int(os.stat(i).st_mtime),
-            mtime_n=0,
-            dev=os.stat(i).st_dev,
-            ino=os.stat(i).st_ino,
-            mode=os.stat(i).st_mode,
-            uid=os.stat(i).st_uid,
-            gid=os.stat(i).st_gid,
-            size=os.stat(i).st_size,
-            sha1=bytes.fromhex(hash_object(data, "blob", write=True)),
-            flags=len(i.name),
-            name=str(i),
+                ctime_s=int(os.stat(i).st_ctime),
+                ctime_n=0,
+                mtime_s=int(os.stat(i).st_mtime),
+                mtime_n=0,
+                dev=os.stat(i).st_dev,
+                ino=os.stat(i).st_ino,
+                mode=os.stat(i).st_mode,
+                uid=os.stat(i).st_uid,
+                gid=os.stat(i).st_gid,
+                size=os.stat(i).st_size,
+                sha1=bytes.fromhex(hash_object(data, "blob", write=True)),
+                flags=len(i.name),
+                name=str(i),
             )
         index.append(entry)
     if write:
