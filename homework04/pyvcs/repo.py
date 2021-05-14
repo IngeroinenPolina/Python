@@ -7,13 +7,15 @@ def repo_find(workdir: tp.Union[str, pathlib.Path] = ".") -> pathlib.Path:
     # PUT YOUR CODE HERE
     gitdir_name = os.getenv("GIT_DIR", ".pyvcs")
     workdir = pathlib.Path(workdir)
+
     while pathlib.Path(workdir.absolute().root) != workdir.absolute():
-        if os.path.isdir((workdir / gitdir_name)):
+        if os.path.isdir((workdir / ngitdir_name)):
             return workdir / gitdir_name
         workdir = workdir.parent
-    if os.path.isdir((workdir / gitdir_name):
+
+    if os.path.isdir((workdir / gitdir_name)):
         return workdir / gitdir_name
-    raise Exception("Not a git repository")
+    raise AssertionError("Not a git repository")
 
 
 def repo_create(workdir: tp.Union[str, pathlib.Path]) -> pathlib.Path:
