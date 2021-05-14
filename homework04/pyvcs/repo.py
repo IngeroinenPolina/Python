@@ -9,7 +9,7 @@ def repo_find(workdir: tp.Union[str, pathlib.Path] = ".") -> pathlib.Path:
     workdir = pathlib.Path(workdir)
 
     while pathlib.Path(workdir.absolute().root) != workdir.absolute():
-        if os.path.isdir((workdir / ngitdir_name)):
+        if os.path.isdir((workdir / gitdir_name)):
             return workdir / gitdir_name
         workdir = workdir.parent
 
