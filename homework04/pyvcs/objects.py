@@ -68,15 +68,22 @@ def read_tree(data: bytes) -> tp.List[tp.Tuple[int, str, str]]:
 
 def cat_file(obj_name: str, pretty: bool = True) -> None:
     # PUT YOUR CODE HERE
-    fmt, data = read_object(obj_name, repo_find())
-    if fmt == "blob" or fmt == "commit":
-        print(data.decode())
+    gitdir = repo_find()
+    fmt, content = read_object(obj_name, gitdir)
+    if fmt == "blob":
+        print(content.decode("ascii") if pretty else str(content))
+    elif fmt == "tree":
+        tree = read_tree(content)
+        for i in tree:
+            mode = i[0]
+            mode = str(mode)
+            lenght, value = len(mode), 6
+            if lenght != value:
+                mode = "0" + mode
+            print(f"{mode} {read_object(i[1], gitdir)[0]} {i[1]}\t{i[2]}")
     else:
-        for tree in read_tree(data):
-            if tree[0] == 40000:
-                print(f"{tree[0]:06}", "tree", tree[2] + "\t" + tree[1])
-            else:
-                print(f"{tree[0]:06}", "blob", tree[2] + "\t" + tree[1])
+        obj_name1 = resolve_object(obj_name, gitdir)[0]
+        print(read_object(obj_name1, gitdir)[1].decode())
 
 
 def find_tree_files(tree_sha: str, gitdir: pathlib.Path) -> tp.List[tp.Tuple[str, str]]:
